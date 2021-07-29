@@ -1,0 +1,8 @@
+{
+  "C_Cpp.intelliSenseEngine": "Default",
+  "idf.portWin": "COM12",
+  "files.associations": {
+    "stdatomic.h": "c",
+    "algorithm": "cpp"
+  }
+}
