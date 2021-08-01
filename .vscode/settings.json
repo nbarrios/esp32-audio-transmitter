@@ -3,6 +3,8 @@
   "idf.portWin": "COM12",
   "files.associations": {
     "stdatomic.h": "c",
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "esp_wifi_private.h": "c",
+    "wifi_os_adapter.h": "c"
   }
 }

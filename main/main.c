@@ -11,9 +11,12 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+#include "nvs_flash.h"
 #include "driver/timer.h"
 
-#include "wifi.h"
+//#include "wifi.h"
+#include "war_wifi.h"
+#include "war_espnow.h"
 #include "mixer.h"
 #include "vban_client.h"
 #include "es8388_i2c.h"
@@ -28,7 +31,19 @@ void app_main(void)
 {
     //wifi_connect();
 
-    //xTaskCreatePinnedToCore(main_task, "Main Task", 4 * 1024, NULL, configMAX_PRIORITIES - 6, NULL, 1);
+    // Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK( nvs_flash_erase() );
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+
+    war_wifi_init();
+
+    ESP_ERROR_CHECK( espnow_init(false) );
+
+    xTaskCreatePinnedToCore(main_task, "Main Task", 4 * 1024, NULL, configMAX_PRIORITIES - 6, NULL, 1);
     //xTaskCreatePinnedToCore(vban_task, "VBAN Task", 4 * 1024, NULL, configMAX_PRIORITIES - 7, NULL, 0);
 }
 
