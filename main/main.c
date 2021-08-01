@@ -73,11 +73,12 @@ void main_timer_init()
     config.counter_en = TIMER_PAUSE;
     config.alarm_en = TIMER_ALARM_EN;
     config.auto_reload = TIMER_AUTORELOAD_EN;
+    config.intr_type = TIMER_INTR_LEVEL;
 
     timer_init(TIMER_GROUP_0, TIMER_0, &config);
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
 
-    const uint64_t alarm_value = (5.f / 1000.f) * (TIMER_BASE_CLK / 16);
+    const uint64_t alarm_value = (2.f / 1000.f) * (TIMER_BASE_CLK / 16);
     timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, alarm_value);
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
     timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr,
