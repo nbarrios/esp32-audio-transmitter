@@ -18,8 +18,6 @@ struct mixer_buffers_t
 {
     int16_t* mix_buf;
     size_t mix_buf_len;
-    float* oversampled_buf;
-    size_t oversampled_len;
     int16_t* backing_buffer;
     ringbuf_i16_t* ringbuffer;
 };
