@@ -13,6 +13,7 @@
 #include "esp_spi_flash.h"
 #include "nvs_flash.h"
 #include "driver/timer.h"
+#include "esp_log.h"
 
 //#include "wifi.h"
 #include "war_wifi.h"
@@ -29,8 +30,6 @@ void vban_task(void *pvParam);
 
 void app_main(void)
 {
-    //wifi_connect();
-
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -43,7 +42,7 @@ void app_main(void)
 
     ESP_ERROR_CHECK( espnow_init(false) );
 
-    xTaskCreatePinnedToCore(main_task, "Main Task", 4 * 1024, NULL, configMAX_PRIORITIES - 6, NULL, 1);
+    xTaskCreatePinnedToCore(main_task, "Main Task", 4 * 1024, NULL, 3, NULL, 1);
     //xTaskCreatePinnedToCore(vban_task, "VBAN Task", 4 * 1024, NULL, configMAX_PRIORITIES - 7, NULL, 0);
 }
 
@@ -78,7 +77,7 @@ void main_timer_init()
     timer_init(TIMER_GROUP_0, TIMER_0, &config);
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
 
-    const uint64_t alarm_value = (2.f / 1000.f) * (TIMER_BASE_CLK / 16);
+    const uint64_t alarm_value = (1.0f / 1000.f) * (TIMER_BASE_CLK / 16);
     timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, alarm_value);
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
     timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr,
@@ -89,9 +88,14 @@ void main_timer_init()
 
 void main_task(void *pvParam)
 {
-    es_i2c_init();
+    //es_i2c_init();
     mixer_init();
     main_timer_init();
+    espnow_send(mixer.ringbuffer);
+
+    int64_t start, end;
+    int64_t accum = 0;
+    int64_t count = 0;
 
     xMainTaskNotify = xTaskGetCurrentTaskHandle();
     uint32_t notification_val;
@@ -100,7 +104,16 @@ void main_task(void *pvParam)
         notification_val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         if (notification_val == 1)
         {
+            start = esp_timer_get_time();
             mixer_read();
+            espnow_tick(mixer.ringbuffer);
+            end = esp_timer_get_time();
+            accum += end - start;
+            count++;
+            if (count >= 10000) {
+                ESP_LOGI("MAIN", "Avg. Tick Time: %0.2fms", ((float)accum / (float)count) * 0.001f);
+                count = accum = 0;
+            }
         }
     }
 }

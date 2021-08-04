@@ -12,6 +12,10 @@
 
 #define MIXER_TAG "Mixer"
 
+#define SINE_SAMPLES    109
+int16_t sine_buffer[SINE_SAMPLES];
+uint16_t sine_index = 0;
+
 mixer_buffers_t mixer;
 
 const size_t buffer_ms = 2;
@@ -20,7 +24,7 @@ const size_t buffer_channels = 2;
 const size_t buffer_size =
     buffer_ms * buffer_samples_per_ms * buffer_channels;
 
-uint16_t single_packet_buffer[48 * 2];
+uint16_t single_packet_buffer[60 * 2];
 
 void mixer_init()
 {
@@ -51,6 +55,15 @@ void mixer_init()
     //MCLK Output
     WRITE_PERI_REG(PIN_CTRL, READ_PERI_REG(PIN_CTRL)&0xFFFFFFF0);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
+
+    //Sine Wave 440HZ
+    double delta = 1.0 / (double)48000;
+    double freq = 440.0;
+    for (int i = 0; i < SINE_SAMPLES; i++)
+    {
+        double val = 0.02 * sin(2.0 * M_PI * freq * (double)i * delta);
+        sine_buffer[i] = (int16_t) round(val * (double) INT16_MAX);
+    }
 
     mixer.mix_buf = (int16_t*) malloc(buffer_size * sizeof(int16_t));
     mixer.mix_buf_len = buffer_size;
@@ -92,7 +105,7 @@ void mixer_tick(size_t samples)
 
 void mixer_read()
 {
-    size_t bytes_read = 0;
+/*     size_t bytes_read = 0;
     size_t bytes_written = 0;
     esp_err_t err = i2s_read(I2S_NUM_0, mixer.mix_buf,
         mixer.mix_buf_len * sizeof(int16_t), &bytes_read, portMAX_DELAY); 
@@ -102,8 +115,16 @@ void mixer_read()
     {
         //Every other sample (mono)
         single_packet_buffer[j] = mixer.mix_buf[i];
-    }
-    if (xQueueSend(espnow_data_queue, single_packet_buffer, 0) != pdTRUE) {
-        //ESP_LOGI(MIXER_TAG, "Failed to queue ESPNOW data.");
+    } */
+
+/*     for (int i = 0; i < sizeof(single_packet_buffer); i++) {
+        single_packet_buffer[i] = sine_buffer[sine_index];
+        sine_index++;
+        if (sine_index >= SINE_SAMPLES) sine_index = 0;
+    } */
+    for (int i = 0; i < 48 * 2; i++) {
+        ringbuf_i16_write(mixer.ringbuffer, sine_buffer[sine_index]);
+        sine_index++;
+        if (sine_index >= SINE_SAMPLES) sine_index = 0;
     }
 }

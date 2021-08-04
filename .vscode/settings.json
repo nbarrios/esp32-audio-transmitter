@@ -5,6 +5,7 @@
     "stdatomic.h": "c",
     "algorithm": "cpp",
     "esp_wifi_private.h": "c",
-    "wifi_os_adapter.h": "c"
+    "wifi_os_adapter.h": "c",
+    "wifi.h": "c"
   }
 }
