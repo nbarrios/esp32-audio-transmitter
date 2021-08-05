@@ -24,7 +24,7 @@ const size_t buffer_channels = 2;
 const size_t buffer_size =
     buffer_ms * buffer_samples_per_ms * buffer_channels;
 
-uint16_t single_packet_buffer[60 * 2];
+uint16_t single_packet_buffer[buffer_ms * buffer_samples_per_ms];
 
 void mixer_init()
 {
@@ -116,15 +116,12 @@ void mixer_read()
         //Every other sample (mono)
         single_packet_buffer[j] = mixer.mix_buf[i];
     } */
-
-/*     for (int i = 0; i < sizeof(single_packet_buffer); i++) {
+    for (int i = 0; i < (sizeof(single_packet_buffer) / sizeof(single_packet_buffer[0])); i++) {
         single_packet_buffer[i] = sine_buffer[sine_index];
         sine_index++;
         if (sine_index >= SINE_SAMPLES) sine_index = 0;
-    } */
-    for (int i = 0; i < 48 * 2; i++) {
-        ringbuf_i16_write(mixer.ringbuffer, sine_buffer[sine_index]);
-        sine_index++;
-        if (sine_index >= SINE_SAMPLES) sine_index = 0;
+    }
+    if (xQueueSend(espnow_data_queue, single_packet_buffer, portMAX_DELAY) != pdTRUE) {
+        ESP_LOGI(MIXER_TAG, "Failed to send espnow data.");
     }
 }
