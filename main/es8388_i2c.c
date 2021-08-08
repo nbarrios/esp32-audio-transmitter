@@ -83,7 +83,7 @@ void es_i2c_init()
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Power up ADC
-    err = es_write_reg(REG_ADC_PWR_MANAGEMENT, 0b10100000);
+    err = es_write_reg(REG_ADC_PWR_MANAGEMENT, 0b00001000);
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Power up DAC and enable LROUT/ROUT
@@ -91,11 +91,15 @@ void es_i2c_init()
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Select Analog input channel for ADC
-    err = es_write_reg(REG_ADC_CONTROL_2, 0b01010000);
+    err = es_write_reg(REG_ADC_CONTROL_2, 0b11010000);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(err);
+
+    //Select differential input
+    err = es_write_reg(REG_ADC_CONTROL_3, 0b10000010);
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Set Analog Input PGA Gain
-    err = es_write_reg(REG_ADC_CONTROL_1, 0b00000100);
+    err = es_write_reg(REG_ADC_CONTROL_1, 0b00000000);
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Set SFI for ADC
@@ -107,8 +111,8 @@ void es_i2c_init()
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Set ADC Digital Volume
-    err = es_write_reg(REG_ADC_CONTROL_8, 0x0);
-    err += es_write_reg(REG_ADC_CONTROL_9, 0x0);
+    err = es_write_reg(REG_ADC_CONTROL_8, 0x1F);
+    err += es_write_reg(REG_ADC_CONTROL_9, 0x1F);
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Set SFI for DAC
@@ -120,8 +124,8 @@ void es_i2c_init()
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Set DAC Digital Volume
-    err = es_write_reg(REG_DAC_CONTROL_4, 0x00);
-    err += es_write_reg(REG_DAC_CONTROL_5, 0x00);
+    err = es_write_reg(REG_DAC_CONTROL_4, 0x0F);
+    err += es_write_reg(REG_DAC_CONTROL_5, 0x0F);
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Setup Mixer
