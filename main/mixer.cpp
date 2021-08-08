@@ -105,7 +105,7 @@ void mixer_tick(size_t samples)
 
 void mixer_read()
 {
-/*     size_t bytes_read = 0;
+    size_t bytes_read = 0;
     size_t bytes_written = 0;
     esp_err_t err = i2s_read(I2S_NUM_0, mixer.mix_buf,
         mixer.mix_buf_len * sizeof(int16_t), &bytes_read, portMAX_DELAY); 
@@ -114,13 +114,13 @@ void mixer_read()
     for (int i = 0, j = 0; i < bytes_read / sizeof(int16_t); i=i+2, j++)
     {
         //Every other sample (mono)
-        single_packet_buffer[j] = mixer.mix_buf[i];
-    } */
-    for (int i = 0; i < (sizeof(single_packet_buffer) / sizeof(single_packet_buffer[0])); i++) {
+        single_packet_buffer[j] = mixer.mix_buf[i+1];
+    }
+/*     for (int i = 0; i < (sizeof(single_packet_buffer) / sizeof(single_packet_buffer[0])); i++) {
         single_packet_buffer[i] = sine_buffer[sine_index];
         sine_index++;
         if (sine_index >= SINE_SAMPLES) sine_index = 0;
-    }
+    } */
     if (xQueueSend(espnow_data_queue, single_packet_buffer, portMAX_DELAY) != pdTRUE) {
         ESP_LOGI(MIXER_TAG, "Failed to send espnow data.");
     }
