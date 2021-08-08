@@ -4,13 +4,13 @@
 #include "esp_now.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "ringbuf_i16.h"
+#include "freertos/ringbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ESPNOW_QUEUE_SIZE           6
+#define ESPNOW_QUEUE_SIZE           12
 #define ESPNOW_DATA_QUEUE_SIZE      5
 
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
@@ -76,9 +76,10 @@ extern xQueueHandle espnow_data_queue;
 
 esp_err_t espnow_init(bool receiver);
 void espnow_deinit(espnow_send_param_t* send_param);
+void espnow_set_rbuf(RingbufHandle_t rbuf);
 void espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
 void espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data, int len);
-int espnow_data_parse(uint8_t* data, uint16_t data_len, uint8_t* state, uint16_t* seq, int* magic);
+espnow_data_t* espnow_data_parse(uint8_t* data, uint16_t data_len, uint8_t* state, uint16_t* seq, int* magic);
 void espnow_data_prepare(espnow_send_param_t* param);
 void espnow_task();
 void espnow_tick();
