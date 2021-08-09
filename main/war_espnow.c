@@ -52,7 +52,7 @@ esp_err_t espnow_init(bool receiver) {
 
     ESP_ERROR_CHECK( esp_now_set_pmk((uint8_t*)ESPNOW_PMK) );
 
-    uint8_t* peer_mac = is_receiver ? transmitter_mac : receiver_mac;
+    uint8_t* peer_mac = broadcast_mac; //is_receiver ? transmitter_mac : receiver_mac;
     ESP_LOGI(TAG, "Adding peer: "MACSTR, MAC2STR(peer_mac));
     esp_now_peer_info_t* peer = malloc(sizeof(esp_now_peer_info_t));
     if (peer == NULL) {
@@ -219,9 +219,9 @@ void espnow_tick() {
 
                 //ESP_LOGD(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
                 //ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(send_cb->mac_addr));
-                if (send_cb->status == ESP_NOW_SEND_FAIL) {
-                    ESP_LOGI(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
-                }
+                // if (send_cb->status == ESP_NOW_SEND_FAIL) {
+                //     ESP_LOGI(TAG, "Send data to "MACSTR", status1: %d", MAC2STR(send_cb->mac_addr), send_cb->status);
+                // }
 
                 memcpy(send_param->dest_mac, send_cb->mac_addr, ESP_NOW_ETH_ALEN);
                 espnow_send();
