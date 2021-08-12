@@ -48,13 +48,16 @@ enum {
     ESPNOW_DATA_MAX
 };
 
+enum {
+    ESPNOW_RBUF_INACTIVE,
+    ESPNOW_RBUF_ACTIVE,
+    ESPNOW_RBUF_ERROR
+};
+
 /* User defined field of ESPNOW data in this example. */
 typedef struct {
-    uint8_t type;                         //Broadcast or unicast ESPNOW data.
-    uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
-    uint16_t seq_num;                     //Sequence number of ESPNOW data.
+    uint32_t seq_num;                     //Sequence number of ESPNOW data.
     uint16_t crc;                         //CRC16 value of ESPNOW data.
-    uint32_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
     uint8_t payload[0];                   //Real payload of ESPNOW data.
 } __attribute__((packed)) espnow_data_t;
 
@@ -71,12 +74,30 @@ typedef struct {
     uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
 } espnow_send_param_t;
 
+typedef struct {
+    int64_t time;
+    int32_t interval;
+
+    uint32_t rx_byte_count;
+    uint32_t tx_byte_count;
+
+    uint32_t total_packet_count;
+    uint32_t missed_packet_count;
+
+    uint32_t ringbuffer_accum;
+    uint32_t ringbuffer_count;
+
+    uint16_t receive_queue_accum;
+    uint16_t receive_queue_count;
+} espnow_debug_t;
+
 extern xQueueHandle espnow_queue;
 extern xQueueHandle espnow_data_queue;
 
 esp_err_t espnow_init(bool receiver);
 void espnow_deinit(espnow_send_param_t* send_param);
 void espnow_set_rbuf(RingbufHandle_t rbuf);
+void espnow_set_rbuf_state(uint8_t state);
 void espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
 void espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data, int len);
 espnow_data_t* espnow_data_parse(uint8_t* data, uint16_t data_len, uint8_t* state, uint16_t* seq, int* magic);

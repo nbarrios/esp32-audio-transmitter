@@ -35,15 +35,13 @@ void vban_client_init()
     vban_packet.data_format = 1;
     memcpy(vban_packet.stream_name, "Guitar", 6);
     vban_packet.frame_counter = 0;
-
-    ringbuf_i16_reset(mixer.ringbuffer);
 }
 
 void vban_client_tick()
 {
     if (!vban_client.enabled) return;
 
-    while (ringbuf_i16_size(mixer.ringbuffer) >= 256)
+/*     while (ringbuf_i16_size(mixer.ringbuffer) >= 256)
     {
         vban_packet.samples_per_frame = 256 - 1;
         vban_packet.frame_counter = vban_client.frame_counter++;
@@ -68,7 +66,7 @@ void vban_client_tick()
             ESP_LOGE(VBAN_TAG, "Error occured during sending: errno %d", errno);
             return;
         }
-    }
+    } */
 }
 
 void vban_client_deinit()

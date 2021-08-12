@@ -18,8 +18,6 @@ struct mixer_buffers_t
 {
     int16_t* mix_buf;
     size_t mix_buf_len;
-    int16_t* backing_buffer;
-    ringbuf_i16_t* ringbuffer;
 };
 typedef struct mixer_buffers_t mixer_buffers_t;
 extern mixer_buffers_t mixer;
