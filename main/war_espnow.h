@@ -78,6 +78,10 @@ typedef struct {
     int64_t time;
     int32_t interval;
 
+    int64_t last_micro;
+    int64_t micro_accum;
+    int32_t micro_count; 
+
     uint32_t rx_byte_count;
     uint32_t tx_byte_count;
 
@@ -96,7 +100,7 @@ extern xQueueHandle espnow_data_queue;
 
 esp_err_t espnow_init(bool receiver);
 void espnow_deinit(espnow_send_param_t* send_param);
-void espnow_set_rbuf(RingbufHandle_t rbuf);
+void espnow_set_rbuf(RingbufHandle_t rbuf, size_t len);
 void espnow_set_rbuf_state(uint8_t state);
 void espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
 void espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data, int len);
@@ -105,6 +109,7 @@ void espnow_data_prepare(espnow_send_param_t* param);
 void espnow_task();
 void espnow_tick();
 void espnow_send();
+void espnow_print_debug();
 
 #ifdef __cplusplus
 }
