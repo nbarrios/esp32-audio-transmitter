@@ -23,11 +23,9 @@
 #include "es8388_i2c.h"
 
 static TaskHandle_t xMainTaskNotify = NULL;
-static TaskHandle_t xVBANTaskNotify = NULL;
 
 void audio_timer_init();
 void main_task(void *pvParam);
-void vban_task(void *pvParam);
 
 void app_main(void)
 {
@@ -61,8 +59,6 @@ void IRAM_ATTR timer_group0_isr(void *para)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     if (xMainTaskNotify)
         vTaskNotifyGiveFromISR(xMainTaskNotify, &xHigherPriorityTaskWoken);
-/*     if (xVBANTaskNotify)
-        vTaskNotifyGiveFromISR(xVBANTaskNotify, &xHigherPriorityTaskWoken); */
 
     timer_spinlock_give(TIMER_GROUP_0);
 
@@ -102,20 +98,6 @@ void main_task(void *pvParam)
         if (notification_val == 1)
         {
             mixer_read(); 
-        }
-    }
-}
-
-void vban_task(void *pvParam)
-{
-    xVBANTaskNotify = xTaskGetCurrentTaskHandle();
-    uint32_t notification_val;
-    for (;;)
-    {
-        notification_val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        if (notification_val == 1)
-        {
-            vban_client_tick();
         }
     }
 }
