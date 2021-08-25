@@ -26,7 +26,7 @@ const size_t buffer_size =
 const size_t stereo_buffer_size =
     buffer_ms * buffer_samples_per_ms * buffer_channels;
 
-uint16_t single_packet_buffer[buffer_ms * buffer_samples_per_ms * 2];
+uint16_t single_packet_buffer[buffer_ms * buffer_samples_per_ms];
 
 void mixer_init()
 {
@@ -118,9 +118,7 @@ void mixer_read()
         single_packet_buffer[j] = mixer.mix_buf[i+1];
     }
 #else
-    //Copy previous audio frame to beginning of buffer
-    memcpy(single_packet_buffer, single_packet_buffer + buffer_size, buffer_size * sizeof(int16_t));
-    for (int i = buffer_size; i < buffer_size * 2; i++) {
+    for (int i = 0; i < buffer_size; i++) {
         single_packet_buffer[i] = sine_buffer[sine_index];
         sine_index++;
         if (sine_index >= SINE_SAMPLES) sine_index = 0;
