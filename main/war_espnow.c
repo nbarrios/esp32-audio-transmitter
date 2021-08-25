@@ -5,8 +5,8 @@
 
 #define ESPNOW_PMK      "8u3NU3cdMdnxmnUN"
 #define ESPNOW_LMK      "ZbtUUgbhnfo6WyTQ"
-#define ESPNOW_CHANNEL  6
-#define ESPNOW_SEND_LEN (48 * 2 * sizeof(int16_t))
+#define ESPNOW_CHANNEL  8
+#define ESPNOW_SEND_LEN (48 * sizeof(int16_t))
 #define ESPNOW_MAXDELAY 128
 
 static const char *TAG = "ESP-NOW";
@@ -151,8 +151,6 @@ void espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data, int len) {
         ESP_LOGI(TAG, "Send receive queue fail.");
         free(recv_cb->data);
     }
-    debug.receive_queue_accum += uxQueueMessagesWaitingFromISR(espnow_queue);
-    debug.receive_queue_count++;
 }
 
 espnow_data_t* espnow_data_parse(uint8_t* data, uint16_t data_len, uint8_t* state, uint16_t* seq, int* magic) {
@@ -177,19 +175,6 @@ espnow_data_t* espnow_data_parse(uint8_t* data, uint16_t data_len, uint8_t* stat
     return NULL;
 }
 
-void espnow_data_prepare(espnow_send_param_t* param) {
-    espnow_data_t* buf = (espnow_data_t*) send_param->buffer; 
-
-    assert(send_param->len >= sizeof(espnow_data_t));
-
-    buf->seq_num = espnow_seq[0]++;
-    buf->crc = 0;
-
-    xQueueReceive(espnow_data_queue, buf->payload, portMAX_DELAY);
-
-    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
-}
-
 void espnow_task(void *pvParam) {
     if (!is_receiver) espnow_send();
     for (;;) {
@@ -205,9 +190,6 @@ void espnow_tick() {
     uint16_t last_recv_seq = 0;
     int recv_magic = 0;
 
-    uint16_t offset = ESPNOW_SEND_LEN / 2;
-    uint16_t len    = ESPNOW_SEND_LEN / 2;
-
     while (xQueueReceive(espnow_queue, &evt, portMAX_DELAY) == pdTRUE) {
         switch (evt.id) {
             case ESPNOW_SEND_CB:
@@ -222,37 +204,25 @@ void espnow_tick() {
             case ESPNOW_RECV_CB:
             {
                 espnow_event_recv_cb_t* recv_cb = &evt.info.recv_cb;
+
                 debug.total_packet_count++; 
                 int64_t now = esp_timer_get_time();
                 debug.micro_accum += now - debug.last_micro;
                 debug.micro_count++;
                 debug.last_micro = now;
+
                 espnow_data_t* data = espnow_data_parse(recv_cb->data, recv_cb->data_len, &recv_state, &recv_seq, &recv_magic);
                 if (data) {
                     uint16_t seq_diff = recv_seq - last_recv_seq;
                     if (seq_diff != 1 && recv_seq != 0) {
                         debug.missed_packet_count += seq_diff - 1;
-                        offset = 0;
-                        len = ESPNOW_SEND_LEN;
-                        ESP_LOGV(TAG, "Missed packet: %u, using redudant data", recv_seq - 1);
                         if (recv_seq < last_recv_seq) {
-                            ESP_LOGV(TAG, "Received stale packet: %u", recv_seq);
+                            ESP_LOGI(TAG, "Received stale packet: %u", recv_seq);
                         }
                     }
                     if (is_receiver && espnow_rbuf != NULL) {
-/*                         size_t current_size = espnow_rbuf_len - xRingbufferGetCurFreeSize(espnow_rbuf);
-                        const uint16_t threshold = espnow_rbuf_len * 0.25;
-                        if (espnow_data_state == ESPNOW_RBUF_INACTIVE) {
-                            if (current_size > threshold) {
-                                size_t recv_bytes;
-                                char *data = xRingbufferReceiveUpTo(espnow_rbuf, &recv_bytes, 0, current_size - threshold + len);
-                                if (data) {
-                                    vRingbufferReturnItem(espnow_rbuf, data);
-                                }
-                            }
-                        } */
                         if (espnow_data_state == ESPNOW_RBUF_ACTIVE) {
-                            if (xRingbufferSend(espnow_rbuf, data->payload + offset, len, portMAX_DELAY) != pdTRUE) {
+                            if (xRingbufferSend(espnow_rbuf, data->payload, ESPNOW_SEND_LEN, portMAX_DELAY) != pdTRUE) {
                                 ESP_LOGE(TAG, "Failed to send to ringbuffer");
                             }
                         }
@@ -260,7 +230,6 @@ void espnow_tick() {
                         debug.ringbuffer_count++;
                     }
                     last_recv_seq = recv_seq;
-                    offset = len = ESPNOW_SEND_LEN / 2;
                 }
                 else {
                     ESP_LOGI(TAG, "Receive error data from: "MACSTR"", MAC2STR(recv_cb->mac_addr));
@@ -274,6 +243,19 @@ void espnow_tick() {
         }
         espnow_print_debug();
     }
+}
+
+void espnow_data_prepare(espnow_send_param_t* param) {
+    espnow_data_t* buf = (espnow_data_t*) send_param->buffer; 
+
+    assert(send_param->len >= sizeof(espnow_data_t));
+
+    buf->seq_num = espnow_seq[0]++;
+    buf->crc = 0;
+
+    xQueueReceive(espnow_data_queue, buf->payload, portMAX_DELAY);
+
+    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 }
 
 void espnow_send() {
@@ -297,21 +279,25 @@ void espnow_print_debug() {
     if (diff >= debug.interval) {
         debug.time = now;
         float rbuf_bytes_free_avg = (float)debug.ringbuffer_accum / debug.ringbuffer_count;
-        ESP_LOGI(TAG, "\nTX: %0.1fKBps, RX: %0.1fKbps\nMissed %0.2f%%(%u) of packets\nAudio Ringbuffer Avg: %0.1f%% (%0.1fB Free)\nRX Queue Len Avg: %0.2f\nRX CB: %0.1f",
+        ESP_LOGI(TAG, "\nTX: %0.1fKBps, RX: %0.1fKbps\n"
+                      "Missed %0.2f%%(%u) of packets\n"
+                      "Audio Ringbuffer Avg: %0.1f%% (%0.1fB Free)\n"
+                      "RX CB: %0.1f\n"
+                      "Missed USB Audio CBs: %u",
             ((float)debug.tx_byte_count * 0.001f) / (diff * 0.000001f),
             ((float)debug.rx_byte_count * 0.001f) / (diff * 0.000001f),
             ((float)debug.missed_packet_count/(float)debug.total_packet_count) * 100.f,
             debug.missed_packet_count,
             (rbuf_bytes_free_avg / (float)espnow_rbuf_len) * 100.f,
             rbuf_bytes_free_avg,
-            (float)debug.receive_queue_accum / debug.receive_queue_count,
-            (float)debug.micro_accum / debug.micro_count
+            (float)debug.micro_accum / debug.micro_count,
+            debug.missed_audio_cb
         );
 
         debug.rx_byte_count = debug.tx_byte_count = 0;
         debug.total_packet_count = debug.missed_packet_count = 0;
         debug.ringbuffer_accum = debug.ringbuffer_count = 0;
-        debug.receive_queue_accum = debug.receive_queue_count = 0;
         debug.micro_accum = debug.micro_count = 0;
+        debug.missed_audio_cb = 0;
     }
 }

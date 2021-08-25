@@ -91,12 +91,12 @@ typedef struct {
     uint32_t ringbuffer_accum;
     uint32_t ringbuffer_count;
 
-    uint16_t receive_queue_accum;
-    uint16_t receive_queue_count;
+    uint32_t missed_audio_cb;
 } espnow_debug_t;
 
 extern xQueueHandle espnow_queue;
 extern xQueueHandle espnow_data_queue;
+extern espnow_debug_t debug;
 
 esp_err_t espnow_init(bool receiver);
 void espnow_deinit(espnow_send_param_t* send_param);
