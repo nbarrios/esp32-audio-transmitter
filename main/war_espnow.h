@@ -63,11 +63,8 @@ typedef struct {
 
 /* Parameters of sending ESPNOW data. */
 typedef struct {
-    bool unicast;                         //Send unicast ESPNOW data.
-    bool broadcast;                       //Send broadcast ESPNOW data.
     uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
-    uint32_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
-    uint16_t count;                       //Total count of unicast ESPNOW data to be sent.
+    bool resend_scheduled;
     uint16_t delay;                       //Delay between sending two ESPNOW data, unit: ms.
     int len;                              //Length of ESPNOW data to be sent, unit: byte.
     uint8_t *buffer;                      //Buffer pointing to ESPNOW data.
@@ -92,6 +89,10 @@ typedef struct {
     uint32_t ringbuffer_count;
 
     uint32_t missed_audio_cb;
+
+    int64_t packet_sent;
+    uint32_t packet_accum;
+    uint32_t packet_count; 
 } espnow_debug_t;
 
 extern xQueueHandle espnow_queue;
@@ -104,7 +105,7 @@ void espnow_set_rbuf(RingbufHandle_t rbuf, size_t len);
 void espnow_set_rbuf_state(uint8_t state);
 void espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status);
 void espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data, int len);
-espnow_data_t* espnow_data_parse(uint8_t* data, uint16_t data_len, uint8_t* state, uint16_t* seq, int* magic);
+espnow_data_t* espnow_data_parse(uint8_t* data, uint16_t data_len, uint8_t* state, uint32_t* seq, int* magic);
 void espnow_data_prepare(espnow_send_param_t* param);
 void espnow_task();
 void espnow_tick();

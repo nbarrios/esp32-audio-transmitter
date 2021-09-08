@@ -46,7 +46,6 @@ void app_main(void)
     audio_timer_init();
 
     xTaskCreatePinnedToCore(main_task, "Main Task", 2 * 1024, NULL, 4, NULL, 1);
-    //xTaskCreatePinnedToCore(vban_task, "VBAN Task", 4 * 1024, NULL, configMAX_PRIORITIES - 7, NULL, 0);
 }
 
 void IRAM_ATTR timer_group0_isr(void *para)
@@ -79,7 +78,7 @@ void audio_timer_init()
     timer_init(TIMER_GROUP_0, TIMER_0, &config);
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
 
-    const uint64_t alarm_value = (1.f / 1000.f) * (TIMER_BASE_CLK / 16);
+    const uint64_t alarm_value = (1.0f / 1000.f) * (TIMER_BASE_CLK / 16);
     timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, alarm_value);
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
     timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr,

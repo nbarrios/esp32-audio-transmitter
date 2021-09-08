@@ -104,7 +104,7 @@ void mixer_tick(size_t samples)
 
 void mixer_read()
 {
-#define TEST_SINE 1
+#define TEST_SINE 0
 #if TEST_SINE == 0
     size_t bytes_read = 0;
     size_t bytes_written = 0;
