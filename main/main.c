@@ -15,11 +15,10 @@
 #include "driver/timer.h"
 #include "esp_log.h"
 
-//#include "wifi.h"
+#include "war_config.h"
 #include "war_wifi.h"
 #include "war_espnow.h"
-#include "mixer.h"
-#include "vban_client.h"
+#include "war_mixer.h"
 #include "es8388_i2c.h"
 
 static TaskHandle_t xMainTaskNotify = NULL;
@@ -78,7 +77,7 @@ void audio_timer_init()
     timer_init(TIMER_GROUP_0, TIMER_0, &config);
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
 
-    const uint64_t alarm_value = (1.0f / 1000.f) * (TIMER_BASE_CLK / 16);
+    const uint64_t alarm_value = ((float)MS_PER_PACKET / 1000.f) * (TIMER_BASE_CLK / 16);
     timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, alarm_value);
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
     timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr,

@@ -1,4 +1,6 @@
-#include "mixer.h"
+#include "war_mixer.h"
+#include "war_config.h"
+#include "war_espnow.h"
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "driver/i2s.h"
@@ -8,7 +10,6 @@
 #include "FilterButterworth24db.h"
 #include "Iir.h"
 #include <algorithm>
-#include "war_espnow.h"
 
 #define MIXER_TAG "Mixer"
 
@@ -18,8 +19,8 @@ uint16_t sine_index = 0;
 
 mixer_buffers_t mixer;
 
-const size_t buffer_ms = 1;
-const size_t buffer_samples_per_ms = 48000 / 1000;
+const size_t buffer_ms = MS_PER_PACKET;
+const size_t buffer_samples_per_ms = SAMPLERATE / 1000;
 const size_t buffer_channels = 2;
 const size_t buffer_size =
     buffer_ms * buffer_samples_per_ms;
@@ -33,7 +34,7 @@ void mixer_init()
     //I2S Config
     i2s_config_t i2s_num0_config = {
         .mode = (i2s_mode_t) (I2S_MODE_MASTER | I2S_MODE_RX),
-        .sample_rate = 48000,
+        .sample_rate = SAMPLERATE,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
@@ -47,7 +48,7 @@ void mixer_init()
 
     i2s_driver_install(I2S_NUM_0, &i2s_num0_config, 0, NULL);
     i2s_pin_config_t pin_config = {
-        .bck_io_num = 5,
+        .bck_io_num = 27,
         .ws_io_num = 25,
         .data_out_num = 26,
         .data_in_num = 35
@@ -59,11 +60,11 @@ void mixer_init()
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
 
     //Sine Wave 440HZ
-    double delta = 1.0 / (double)48000;
+    double delta = 1.0 / (double)SAMPLERATE;
     double freq = 440.0;
     for (int i = 0; i < SINE_SAMPLES; i++)
     {
-        double val = 0.02 * sin(2.0 * M_PI * freq * (double)i * delta);
+        double val = 0.015 * sin(2.0 * M_PI * freq * (double)i * delta);
         sine_buffer[i] = (int16_t) round(val * (double) INT16_MAX);
     }
 

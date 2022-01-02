@@ -1,4 +1,5 @@
 #include "war_espnow.h"
+#include "war_config.h"
 
 #include <string.h>
 
@@ -8,7 +9,7 @@
 #define ESPNOW_PMK "8u3NU3cdMdnxmnUN"
 #define ESPNOW_LMK "ZbtUUgbhnfo6WyTQ"
 #define ESPNOW_CHANNEL 8
-#define ESPNOW_SEND_LEN (48 * sizeof(int16_t))
+#define ESPNOW_SEND_LEN (48 * MS_PER_PACKET * sizeof(int16_t))
 #define ESPNOW_MAXDELAY 128
 
 static const char *TAG = "ESP-NOW";
@@ -79,7 +80,6 @@ esp_err_t espnow_init(bool receiver) {
   }
   send_param->state = 0;
   send_param->resend_scheduled = false;
-  send_param->delay = 1000;
   send_param->len = ESPNOW_SEND_LEN + sizeof(espnow_data_t);
   send_param->buffer = malloc(send_param->len);
   if (send_param->buffer == NULL) {
@@ -94,7 +94,7 @@ esp_err_t espnow_init(bool receiver) {
   debug.interval = 10 * 1000000;
   debug.last_micro = debug.time;
 
-  xTaskCreatePinnedToCore(espnow_task, "ESP-Now Task", 2 * 1024, NULL, 4, NULL,
+  xTaskCreatePinnedToCore(espnow_task, "ESP-Now Task", 3 * 1024, NULL, 4, NULL,
                           1);
 
   return ESP_OK;

@@ -133,7 +133,7 @@ void es_i2c_init()
     err += es_write_reg(REG_DAC_CONTROL_17, 0b10111000); //1011 1000
     err += es_write_reg(REG_DAC_CONTROL_18, 0x38); //0011 1000
     err += es_write_reg(REG_DAC_CONTROL_19, 0x38); //0011 1000
-    err += es_write_reg(REG_DAC_CONTROL_20, 0b10010000);
+    err += es_write_reg(REG_DAC_CONTROL_20, 0b10111000);
     ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     //Set LOUT/ROUT Volume

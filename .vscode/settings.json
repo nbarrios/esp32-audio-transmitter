@@ -1,11 +1,12 @@
 {
   "C_Cpp.intelliSenseEngine": "Default",
-  "idf.portWin": "COM12",
+  "idf.portWin": "COM5",
   "files.associations": {
     "stdatomic.h": "c",
     "algorithm": "cpp",
     "esp_wifi_private.h": "c",
     "wifi_os_adapter.h": "c",
     "wifi.h": "c"
-  }
+  },
+  "idf.adapterTargetName": "esp32"
 }

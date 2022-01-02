@@ -65,7 +65,6 @@ typedef struct {
 typedef struct {
     uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
     bool resend_scheduled;
-    uint16_t delay;                       //Delay between sending two ESPNOW data, unit: ms.
     int len;                              //Length of ESPNOW data to be sent, unit: byte.
     uint8_t *buffer;                      //Buffer pointing to ESPNOW data.
     uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
